@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlockIntel — Intelligent Business Platform</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0b0f1a;--surface:#121829;--surface2:#1a2238;--border:#232d45;
+    --text:#e2e8f0;--text-dim:#8892a8;--accent:#6366f1;--accent-glow:#818cf8;
+    --green:#22c55e;--yellow:#eab308;--red:#ef4444;--cyan:#06b6d4;
+    --orange:#f97316;--pink:#ec4899;
+    --radius:12px;--shadow:0 4px 24px rgba(0,0,0,.4);
+  }
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+  a{color:var(--accent-glow);text-decoration:none}
+
+  /* --- top bar --- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;
+    background:var(--surface);border-bottom:1px solid var(--border)}
+  .topbar h1{font-size:1.3rem;font-weight:700;letter-spacing:.5px}
+  .topbar h1 span{color:var(--accent-glow)}
+  .topbar .meta{font-size:.8rem;color:var(--text-dim)}
+
+  /* --- layout --- */
+  .container{max-width:1440px;margin:0 auto;padding:24px 32px}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+  @media(max-width:1100px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}}
+  @media(max-width:640px){.grid-4{grid-template-columns:1fr}}
+
+  /* --- cards --- */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--shadow);transition:border-color .2s}
+  .card:hover{border-color:var(--accent)}
+  .card h2{font-size:.85rem;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:12px}
+  .big-num{font-size:2.2rem;font-weight:700;line-height:1}
+  .sub{font-size:.78rem;color:var(--text-dim);margin-top:4px}
+
+  /* --- section titles --- */
+  .section-title{font-size:1.05rem;font-weight:600;margin:28px 0 14px;padding-left:12px;border-left:3px solid var(--accent)}
+
+  /* --- architecture viz --- */
+  .arch-layer{display:flex;align-items:center;gap:16px;padding:14px 20px;border-radius:var(--radius);margin-bottom:8px;position:relative;overflow:hidden}
+  .arch-layer::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+  .arch-layer.l-world{background:rgba(6,182,212,.08)}.arch-layer.l-world::before{background:var(--cyan)}
+  .arch-layer.l-cap{background:rgba(99,102,241,.08)}.arch-layer.l-cap::before{background:var(--accent)}
+  .arch-layer.l-intel{background:rgba(236,72,153,.08)}.arch-layer.l-intel::before{background:var(--pink)}
+  .arch-layer.l-iface{background:rgba(34,197,94,.08)}.arch-layer.l-iface::before{background:var(--green)}
+  .arch-label{font-weight:700;min-width:160px;font-size:.9rem}
+  .arch-desc{font-size:.8rem;color:var(--text-dim)}
+
+  /* --- signal rows --- */
+  .signal-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:8px;background:var(--surface2);margin-bottom:6px;font-size:.85rem}
+  .signal-row .badge{padding:2px 10px;border-radius:20px;font-size:.72rem;font-weight:700;text-transform:uppercase;flex-shrink:0}
+  .badge.critical{background:rgba(239,68,68,.2);color:var(--red)}
+  .badge.high{background:rgba(249,115,22,.2);color:var(--orange)}
+  .badge.medium{background:rgba(234,179,8,.2);color:var(--yellow)}
+  .badge.low{background:rgba(34,197,94,.15);color:var(--green)}
+  .signal-row .sig-type{color:var(--accent-glow);font-weight:600;min-width:140px}
+  .signal-row .sig-desc{color:var(--text-dim);flex:1}
+  .signal-row .sig-time{color:var(--text-dim);font-size:.75rem;flex-shrink:0}
+
+  /* --- solution cards --- */
+  .sol-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:18px 22px;transition:transform .15s,border-color .2s}
+  .sol-card:hover{transform:translateY(-2px);border-color:var(--accent)}
+  .sol-card .sol-title{font-weight:700;font-size:.95rem;margin-bottom:6px}
+  .sol-card .sol-merchant{font-size:.78rem;color:var(--cyan);margin-bottom:8px}
+  .sol-card .sol-desc{font-size:.82rem;color:var(--text-dim);margin-bottom:10px}
+  .sol-card .sol-footer{display:flex;justify-content:space-between;align-items:center;font-size:.78rem}
+  .sol-card .sol-caps{display:flex;gap:6px;flex-wrap:wrap}
+  .sol-card .sol-caps span{background:rgba(99,102,241,.15);color:var(--accent-glow);padding:2px 8px;border-radius:6px;font-size:.72rem}
+  .sol-card .confidence{font-weight:700}
+  .sol-card .status-badge{padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700;text-transform:uppercase}
+  .status-badge.proposed{background:rgba(99,102,241,.2);color:var(--accent-glow)}
+  .status-badge.approved{background:rgba(34,197,94,.2);color:var(--green)}
+  .status-badge.deployed{background:rgba(6,182,212,.2);color:var(--cyan)}
+
+  /* --- capability health --- */
+  .cap-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:8px;background:var(--surface2);margin-bottom:6px;font-size:.85rem}
+  .cap-row .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .dot.healthy{background:var(--green);box-shadow:0 0 6px var(--green)}
+  .dot.degraded{background:var(--yellow);box-shadow:0 0 6px var(--yellow)}
+  .dot.down{background:var(--red);box-shadow:0 0 6px var(--red)}
+  .cap-row .cap-name{font-weight:600;min-width:180px}
+  .cap-row .cap-stat{color:var(--text-dim);font-size:.78rem}
+
+  /* --- roles --- */
+  .role-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:18px 22px}
+  .role-card .role-type{font-size:.72rem;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:4px}
+  .role-card .role-type.ic{color:var(--cyan)}.role-card .role-type.dri{color:var(--orange)}.role-card .role-type.pc{color:var(--pink)}
+  .role-card .role-title{font-weight:700;font-size:1rem;margin-bottom:6px}
+  .role-card .role-desc{font-size:.82rem;color:var(--text-dim);margin-bottom:10px}
+  .role-card ul{list-style:none;padding:0}
+  .role-card ul li{font-size:.78rem;color:var(--text-dim);padding:2px 0;padding-left:16px;position:relative}
+  .role-card ul li::before{content:'';position:absolute;left:0;top:9px;width:6px;height:6px;border-radius:50%;background:var(--border)}
+  .role-card .holder-count{margin-top:10px;font-size:.8rem;font-weight:600;color:var(--accent-glow)}
+
+  /* --- loading --- */
+  .loading{text-align:center;padding:40px;color:var(--text-dim);font-size:.9rem}
+  .spinner{display:inline-block;width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:10px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* --- pulse animation for live dot --- */
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 1.5s ease infinite;margin-right:6px}
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <h1><span>Block</span>Intel</h1>
+  <div class="meta"><span class="live-dot"></span>Live Dashboard &mdash; <span id="timestamp">loading...</span></div>
+</div>
+
+<div class="container">
+
+  <!-- KPI Cards -->
+  <div class="grid-4" id="kpi-cards">
+    <div class="card"><h2>Total Merchants</h2><div class="big-num" id="kpi-total">--</div><div class="sub" id="kpi-active"></div></div>
+    <div class="card"><h2>Pending Signals</h2><div class="big-num" id="kpi-signals">--</div><div class="sub" id="kpi-critical"></div></div>
+    <div class="card"><h2>Active Solutions</h2><div class="big-num" id="kpi-solutions">--</div><div class="sub">AI-composed recommendations</div></div>
+    <div class="card"><h2>30-Day Revenue</h2><div class="big-num" id="kpi-revenue">--</div><div class="sub">Across all merchants</div></div>
+  </div>
+
+  <!-- Architecture Visualization -->
+  <div class="section-title">Four-Layer Architecture</div>
+  <div class="card" style="margin-bottom:24px" id="arch-section">
+    <div class="arch-layer l-iface">
+      <div class="arch-label">Interface Layer</div>
+      <div class="arch-desc">Delivers composed solutions to users via APIs and dashboards (you are here)</div>
+    </div>
+    <div class="arch-layer l-intel">
+      <div class="arch-label">Intelligence Layer</div>
+      <div class="arch-desc">Detects signals, composes solutions using AI, maps capabilities to merchant needs</div>
+    </div>
+    <div class="arch-layer l-cap">
+      <div class="arch-label">Capability Layer</div>
+      <div class="arch-desc">Modular business capabilities: Payments, Lending, Card Issuing, BNPL, Fraud Detection</div>
+    </div>
+    <div class="arch-layer l-world">
+      <div class="arch-label">World Model</div>
+      <div class="arch-desc">Company + Customer world models capturing honest signals from dual-sided ecosystem</div>
+    </div>
+  </div>
+
+  <!-- Two-column: Signals + Solutions -->
+  <div class="grid-2">
+    <!-- Signals Panel -->
+    <div>
+      <div class="section-title">Merchant Signal Monitor</div>
+      <div class="card" id="signals-panel">
+        <div class="loading"><div class="spinner"></div><br>Loading signals...</div>
+      </div>
+    </div>
+    <!-- Solutions Panel -->
+    <div>
+      <div class="section-title">Solution Recommendations</div>
+      <div id="solutions-panel">
+        <div class="loading"><div class="spinner"></div><br>Loading solutions...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Capability Health -->
+  <div class="section-title">Capability Layer Health</div>
+  <div class="card" id="capabilities-panel" style="margin-bottom:24px">
+    <div class="loading"><div class="spinner"></div><br>Loading capabilities...</div>
+  </div>
+
+  <!-- Organization Roles -->
+  <div class="section-title">Organization Roles &mdash; Flat Structure</div>
+  <div class="grid-3" id="roles-panel">
+    <div class="loading"><div class="spinner"></div><br>Loading roles...</div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  // ---- Mock data (mirrors the FastAPI mock endpoints) ----
+  const MOCK_DASHBOARD = {
+    merchant_overview: { total: 1284, active: 1130, at_risk: 47, high_growth: 203 },
+    signal_summary: { total: 312, critical: 8, high: 34, medium: 127, low: 143 },
+    recommended_solutions: [
+      {
+        proposal_id: "SOL-001", merchant_id: "M-1001", merchant_name: "Sunrise Coffee",
+        title: "Cash Flow Stabilisation Package",
+        description: "Combine short-term lending with flexible BNPL to bridge seasonal revenue gap.",
+        capabilities_used: ["Lending", "BNPL (Buy Now Pay Later)"],
+        estimated_impact: "Projected +$8,500/mo stabilisation",
+        confidence: 0.87, status: "proposed"
+      },
+      {
+        proposal_id: "SOL-002", merchant_id: "M-1002", merchant_name: "Urban Threads Boutique",
+        title: "Growth Acceleration Bundle",
+        description: "Enable card issuing + advanced payment processing to capture omnichannel growth.",
+        capabilities_used: ["Card Issuing", "Payment Processing"],
+        estimated_impact: "Projected +22% transaction volume",
+        confidence: 0.74, status: "approved"
+      },
+      {
+        proposal_id: "SOL-003", merchant_id: "M-1003", merchant_name: "FreshBite Delivery",
+        title: "Fraud Shield Pro",
+        description: "Deploy enhanced fraud detection with real-time scoring for high-volume delivery orders.",
+        capabilities_used: ["Fraud Detection", "Payment Processing"],
+        estimated_impact: "Estimated $12,000/mo fraud savings",
+        confidence: 0.92, status: "deployed"
+      }
+    ],
+    capability_statuses: [
+      { name: "Payment Processing", health: "healthy", latency_ms: 45.2, throughput_rps: 12500, error_rate: 0.001 },
+      { name: "Lending", health: "healthy", latency_ms: 120.8, throughput_rps: 3200, error_rate: 0.003 },
+      { name: "Card Issuing", health: "degraded", latency_ms: 230.5, throughput_rps: 1800, error_rate: 0.015 },
+      { name: "BNPL (Buy Now Pay Later)", health: "healthy", latency_ms: 98.1, throughput_rps: 4100, error_rate: 0.002 },
+      { name: "Fraud Detection", health: "healthy", latency_ms: 15.3, throughput_rps: 25000, error_rate: 0.0005 },
+      { name: "Invoicing", health: "down", latency_ms: 0, throughput_rps: 0, error_rate: 1.0 }
+    ],
+    organization_roles: [
+      {
+        role_type: "IC", title: "Individual Contributor",
+        description: "Autonomous specialist who owns a capability end-to-end without managerial overhead.",
+        responsibilities: [
+          "Own capability design, implementation, and SLA",
+          "Collaborate directly with peers across layers",
+          "Ship incremental improvements continuously",
+          "Maintain technical documentation"
+        ],
+        current_holders: 142
+      },
+      {
+        role_type: "DRI", title: "Directly Responsible Individual",
+        description: "Single point of accountability for a cross-cutting initiative or decision.",
+        responsibilities: [
+          "Drive decisions without consensus-seeking paralysis",
+          "Coordinate across capability boundaries",
+          "Report outcomes, not activity",
+          "Escalate only true blockers"
+        ],
+        current_holders: 28
+      },
+      {
+        role_type: "Player Coach", title: "Player Coach",
+        description: "Hands-on leader who writes code AND mentors \u2014 replacing traditional middle management.",
+        responsibilities: [
+          "Contribute production code alongside the team",
+          "Mentor ICs through pairing and code review",
+          "Remove organizational friction",
+          "Translate company strategy into capability roadmaps"
+        ],
+        current_holders: 15
+      }
+    ]
+  };
+
+  const MOCK_SIGNALS = [
+    {
+      signal_id: "SIG-001", merchant_id: "M-1001", merchant_name: "Sunrise Coffee",
+      signal_type: "cash_flow_anomaly", severity: "high",
+      description: "30-day rolling cash flow dropped 38% \u2014 potential seasonal dip or churn risk.",
+      detected_at: new Date(Date.now() - 2*3600000).toISOString()
+    },
+    {
+      signal_id: "SIG-002", merchant_id: "M-1001", merchant_name: "Sunrise Coffee",
+      signal_type: "growth_spike", severity: "medium",
+      description: "Online order volume up 120% week-over-week.",
+      detected_at: new Date(Date.now() - 5*3600000).toISOString()
+    },
+    {
+      signal_id: "SIG-003", merchant_id: "M-1001", merchant_name: "Sunrise Coffee",
+      signal_type: "compliance_flag", severity: "critical",
+      description: "KYC document expired \u2014 action required within 7 days.",
+      detected_at: new Date(Date.now() - 1*3600000).toISOString()
+    },
+    {
+      signal_id: "SIG-004", merchant_id: "M-1002", merchant_name: "Urban Threads Boutique",
+      signal_type: "growth_spike", severity: "low",
+      description: "Steady 12% MoM growth in average order value.",
+      detected_at: new Date(Date.now() - 8*3600000).toISOString()
+    },
+    {
+      signal_id: "SIG-005", merchant_id: "M-1003", merchant_name: "FreshBite Delivery",
+      signal_type: "fraud_suspicion", severity: "high",
+      description: "Unusual spike in chargebacks from a single card BIN.",
+      detected_at: new Date(Date.now() - 3*3600000).toISOString()
+    }
+  ];
+
+  const MOCK_COMPANY = {
+    total_merchants: 1284, active_merchants: 1130,
+    total_revenue_30d: 4870000, capability_count: 6,
+    capabilities_healthy: 4, pending_signals: 312, active_solutions: 3
+  };
+
+  // ---- Helper to simulate API fetch with a delay ----
+  function fakeFetch(data, delayMs) {
+    return new Promise(resolve => setTimeout(() => resolve(data), delayMs));
+  }
+
+  function timeAgo(isoStr) {
+    var diff = Date.now() - new Date(isoStr).getTime();
+    var mins = Math.floor(diff / 60000);
+    if (mins < 60) return mins + "m ago";
+    var hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + "h ago";
+    return Math.floor(hrs / 24) + "d ago";
+  }
+
+  function formatCurrency(n) {
+    if (n >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
+    if (n >= 1e3) return "$" + (n / 1e3).toFixed(0) + "K";
+    return "$" + n.toFixed(0);
+  }
+
+  // ---- Renderers ----
+  function renderKPI(dashboard, company) {
+    document.getElementById("kpi-total").textContent = dashboard.merchant_overview.total.toLocaleString();
+    document.getElementById("kpi-active").textContent = dashboard.merchant_overview.active + " active \u00b7 " + dashboard.merchant_overview.at_risk + " at risk \u00b7 " + dashboard.merchant_overview.high_growth + " high growth";
+    document.getElementById("kpi-signals").textContent = dashboard.signal_summary.total;
+    document.getElementById("kpi-critical").innerHTML = '<span style="color:var(--red)">' + dashboard.signal_summary.critical + ' critical</span> \u00b7 ' + dashboard.signal_summary.high + ' high \u00b7 ' + dashboard.signal_summary.medium + ' medium';
+    document.getElementById("kpi-solutions").textContent = company.active_solutions;
+    document.getElementById("kpi-revenue").textContent = formatCurrency(company.total_revenue_30d);
+  }
+
+  function renderSignals(signals) {
+    var panel = document.getElementById("signals-panel");
+    var html = '<h2>Recent Signals</h2>';
+    signals.forEach(function(s) {
+      html += '<div class="signal-row">' +
+        '<span class="badge ' + s.severity + '">' + s.severity + '</span>' +
+        '<span class="sig-type">' + s.signal_type.replace(/_/g, ' ') + '</span>' +
+        '<span class="sig-desc">' + s.description + '</span>' +
+        '<span class="sig-time">' + timeAgo(s.detected_at) + '</span>' +
+        '</div>';
+    });
+    panel.innerHTML = html;
+  }
+
+  function renderSolutions(solutions) {
+    var panel = document.getElementById("solutions-panel");
+    var html = '';
+    solutions.forEach(function(s) {
+      var capsHtml = s.capabilities_used.map(function(c){ return '<span>' + c + '</span>'; }).join('');
+      html += '<div class="sol-card" style="margin-bottom:12px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+          '<div class="sol-title">' + s.title + '</div>' +
+          '<span class="status-badge ' + s.status + '">' + s.status + '</span>' +
+        '</div>' +
+        '<div class="sol-merchant">' + s.merchant_name + ' (' + s.merchant_id + ')</div>' +
+        '<div class="sol-desc">' + s.description + '</div>' +
+        '<div class="sol-footer">' +
+          '<div class="sol-caps">' + capsHtml + '</div>' +
+          '<div class="confidence" style="color:' + (s.confidence >= 0.8 ? 'var(--green)' : s.confidence >= 0.6 ? 'var(--yellow)' : 'var(--red)') + '">' + Math.round(s.confidence * 100) + '% confidence</div>' +
+        '</div>' +
+        '<div style="font-size:.78rem;color:var(--text-dim);margin-top:8px">' + s.estimated_impact + '</div>' +
+        '</div>';
+    });
+    panel.innerHTML = html;
+  }
+
+  function renderCapabilities(caps) {
+    var panel = document.getElementById("capabilities-panel");
+    var html = '<h2>Capability Status</h2>';
+    caps.forEach(function(c) {
+      html += '<div class="cap-row">' +
+        '<span class="dot ' + c.health + '"></span>' +
+        '<span class="cap-name">' + c.name + '</span>' +
+        '<span class="cap-stat">Latency: ' + c.latency_ms.toFixed(1) + 'ms</span>' +
+        '<span class="cap-stat">Throughput: ' + c.throughput_rps.toLocaleString() + ' rps</span>' +
+        '<span class="cap-stat">Error: ' + (c.error_rate * 100).toFixed(2) + '%</span>' +
+        '</div>';
+    });
+    panel.innerHTML = html;
+  }
+
+  function renderRoles(roles) {
+    var panel = document.getElementById("roles-panel");
+    var html = '';
+    roles.forEach(function(r) {
+      var cls = r.role_type === 'IC' ? 'ic' : (r.role_type === 'DRI' ? 'dri' : 'pc');
+      var liHtml = r.responsibilities.map(function(resp){ return '<li>' + resp + '</li>'; }).join('');
+      html += '<div class="role-card">' +
+        '<div class="role-type ' + cls + '">' + r.role_type + '</div>' +
+        '<div class="role-title">' + r.title + '</div>' +
+        '<div class="role-desc">' + r.description + '</div>' +
+        '<ul>' + liHtml + '</ul>' +
+        '<div class="holder-count">' + r.current_holders + ' active holders</div>' +
+        '</div>';
+    });
+    panel.innerHTML = html;
+  }
+
+  // ---- Init ----
+  document.getElementById("timestamp").textContent = new Date().toLocaleString();
+
+  // Try real API first, fall back to mock data
+  function loadData() {
+    var apiBase = window.location.origin;
+
+    // Attempt to fetch from live API; on failure use mock data
+    Promise.all([
+      fetch(apiBase + "/api/dashboard").then(function(r){ return r.ok ? r.json() : Promise.reject(); }).catch(function(){ return null; }),
+      fetch(apiBase + "/api/signals/M-1001").then(function(r){ return r.ok ? r.json() : Promise.reject(); }).catch(function(){ return null; }),
+      fetch(apiBase + "/api/world-model/company").then(function(r){ return r.ok ? r.json() : Promise.reject(); }).catch(function(){ return null; })
+    ]).then(function(results) {
+      var dashboard = results[0] || MOCK_DASHBOARD;
+      var signals   = results[1] || MOCK_SIGNALS;
+      var company   = results[2] || MOCK_COMPANY;
+
+      renderKPI(dashboard, company);
+      renderSignals(signals);
+      renderSolutions(dashboard.recommended_solutions);
+      renderCapabilities(dashboard.capability_statuses);
+      renderRoles(dashboard.organization_roles);
+    });
+  }
+
+  // Simulate loading delay, then render
+  setTimeout(loadData, 600);
+})();
+</script>
+</body>
+</html>
